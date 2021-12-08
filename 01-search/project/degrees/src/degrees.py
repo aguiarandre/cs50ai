@@ -3,6 +3,8 @@ import sys
 
 from util import Node, StackFrontier, QueueFrontier
 
+# from tqdm.auto import tqdm
+
 # Maps names to a set of corresponding person_ids
 names = {}
 
@@ -52,6 +54,9 @@ def load_data(directory):
                 pass
 
 
+
+
+
 def main():
     if len(sys.argv) > 2:
         sys.exit("Usage: python degrees.py [directory]")
@@ -63,9 +68,11 @@ def main():
     print("Data loaded.")
 
     source = person_id_for_name(input("Name: "))
+    # source = person_id_for_name("Demi Moore")
     if source is None:
         sys.exit("Person not found.")
     target = person_id_for_name(input("Name: "))
+    # target = person_id_for_name("Emma Watson")
     if target is None:
         sys.exit("Person not found.")
 
@@ -83,6 +90,9 @@ def main():
             movie = movies[path[i + 1][0]]["title"]
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
+# def while_generator():
+#     while True:
+#         yield
 
 def shortest_path(source, target):
     """
@@ -91,9 +101,72 @@ def shortest_path(source, target):
 
     If no possible path, returns None.
     """
+    initial_state = source # state is the person_id
+    explored_set = set()
+    # variable used to verify success condition
+    goal_check = False 
+    # add source node to frontier
+    node = Node(state=initial_state, parent=None, action=None)
+    frontier = QueueFrontier()
+    frontier.add(node)
+    iteration_number = 0
 
-    # TODO
-    raise NotImplementedError
+    while True:
+    # for _ in tqdm(while_generator()):
+
+        iteration_number+=1
+        # check if frontier is empty
+        if frontier.empty():
+            print('Empty: No solution')
+            return None
+
+        # do not check results every single iteration, it is costly.
+        if iteration_number % 10 == 0:
+            goal_check = frontier.contains_state(target)
+
+        # check if it is the goal
+        if goal_check:
+            # run through frontier nodes until you find your solution
+            for node in frontier.frontier:
+                if node.state == target:
+                    # found it
+                    movies, person_ids = [], []
+
+                    while node.parent is not None:
+                        person_ids.append(node.state)
+                        movies.append(node.action)
+                        node = node.parent
+
+                    movies.reverse()
+                    person_ids.reverse()
+                    return list(zip(movies, person_ids))
+
+        # remove node from frontier
+        node = frontier.remove()
+
+        current_state = node.state
+
+        # update explored set, so we don't explore it once more
+        explored_set.add(current_state)
+
+        # nodes to include in the frontier - available options we can explore next
+        neighbors = neighbors_for_person(current_state)
+        
+        # x[0] is the movie_id (action)
+        # x[1] is the person_id (state)
+        available_nodes = set(map(lambda x: Node(x[1], node, x[0]), neighbors))
+
+        # include a state in the frontier if and only if: 
+        # not already in the explored set AND not already in the frontier
+        for each_node in available_nodes:
+            node_state = each_node.state
+            # check existence in set is O(1), so it is quite fast.
+            if not node_state in explored_set:
+                # .contains_state is O(N) within the frontier size. 
+                # it has to run through all nodes in the frontier and check.
+                # so we just want to perform it wisely.
+                if not frontier.contains_state(node_state):
+                    frontier.add(each_node)
 
 
 def person_id_for_name(name):
