@@ -72,3 +72,33 @@ https://cdn.cs50.net/ai/2020/spring/lectures/0/lecture0.pdf
 
 ### Minimax
 
+- $S_0$ initial state
+- Player(s), returns which player
+- Actions(s), returns legal moves in state s
+- Result(s, a) Transition Model that returns a state after applying an action
+- Terminal(s) checks if a state is a terminal state
+
+## PseudoCode
+
+- Given a state s:
+    - MAX picks action a in the set of actions(s) that produces the highest value of MIN-VALUE(RESULT(s,a))
+    - MIN picks action a in the set of action(s) that produces the minimum value of MAX-VALUE(RESULT(s,a))
+
+- recursively define
+```python
+function MAX-VALUE(state):
+    if terminal(state):
+        return utility(state) #value
+    v = infinity
+    for each_action:
+        v = MAX(v, MIN-VALUE(RESULT(state,each_action))
+    return v
+```
+
+## Optimizations
+### $\alpha$ - $\beta$ pruning
+
+Optimize to not look all child options, keeping track of the smallest value up to now
+### Depth Limited Minimax
+
+- Evaluation function: expected utility
