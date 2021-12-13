@@ -104,29 +104,78 @@ class Sentence():
     def known_mines(self):
         """
         Returns the set of all cells in self.cells known to be mines.
+
+        A cell is known to be a mine when:
+        - any time the number of cells is equal to the count, we know that all of that sentence's cells must be mines.
         """
-        raise NotImplementedError
+        if len(self.cells) == self.count:
+            # it means all neighboring cells are mines
+            # for example, if nearby_mines((0,0)) = 3, it must mean that
+            # {(1,0), (1,1), (0,1)} = 3, or in plain english, they are all mines
+            print("Known mines")
+            print("---------")
+            print(self.cells)
+            print(self.count)
+            return self.cells
+        
+        return set()
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        raise NotImplementedError
+        if self.count == 0:
+            # it means all neighboring cells are safe
+            # for example, if nearby_mines((0,0)) = 0, it must mean that 
+            # {(1,0), (1,1), (0,1)} = 0, or in plain english, they are all safe
+            print("Known safes")
+            print("---------")
+            print(self.cells)
+            print(self.count)
+            return self.cells
+        
+        
+        return set()
 
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        raise NotImplementedError
+        # if this sentence contains information about this cell, update it
+        if cell not in self.cells:
+            return None
+        # remove cell from sentence
+        # for instance, if I have:
+        # {(1,0), (1,1), (0, 1)} = 2, and I discover somehow that (0,1) is a mine
+        # then I remove (0,1) from the set and the resulting sentence would be
+        # {(1,0), (1,1)} = 1
+        self.cells.discard(cell)
+        self.count -= 1
+        print("Mark mine")
+        print("---------")
+        print(self.cells)
+        print(self.count)
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        raise NotImplementedError
+        # if this sentence contains information about this cell, update it
+        if cell not in self.cells:
+            return None
 
+        # remove cell from sentence
+        # for instance, if I have:
+        # {(1,0), (1,1), (0, 1)} = 2, and I discover somehow that (0,1) is safe
+        # then I remove (0,1) from the set and the resulting sentence would be
+        # {(1,0), (1,1)} = 2
+        self.cells.discard(cell)
+        print("Mark safe")
+        print("---------")
+        print(self.cells)
+        print(self.count)
 
 class MinesweeperAI():
     """
@@ -163,7 +212,10 @@ class MinesweeperAI():
         Marks a cell as safe, and updates all knowledge
         to mark that cell as safe as well.
         """
+        # mark cell as safe
         self.safes.add(cell)
+
+        # update knowledge to express that the cell is safe as well
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
@@ -182,7 +234,10 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        raise NotImplementedError
+        self.moves_made.add(cell)
+        self.safes.add(cell)
+        pass
+        #raise NotImplementedError
 
     def make_safe_move(self):
         """
@@ -193,7 +248,18 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        # remove from set of safe moves, the moves already made.
+        possible_safe_moves = self.safes - self.moves_made
+
+        # if empty, we will have to make a random move
+        if not len(possible_safe_moves):
+            return None
+
+        chosen = possible_safe_moves.pop()
+
+        print(chosen)
+
+        return chosen
 
     def make_random_move(self):
         """
@@ -202,4 +268,20 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        # create the set of all possible moves:
+        all_possibilities = set()
+        for i in range(self.height):
+            for j in range(self.width):
+                all_possibilities.add((i, j))
+        
+        possible_moves = all_possibilities - self.moves_made - self.mines - self.safes 
+        
+        # if no move was found, return None
+        if not len(possible_moves):
+            return None
+
+        chosen = possible_moves.pop()
+        
+        
+        print(chosen)
+        return chosen
