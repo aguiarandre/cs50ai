@@ -341,10 +341,10 @@ class MinesweeperAI():
         # which considers only mine information, not far away.
         # So it seems better to, at the beginning, generate a really 
         # random choice.
-        if len(self.moves_made) / (self.height * self.width) > 0.5:
-            guess = self.make_educated_guess()
-            if guess:
-                return guess
+        #if len(self.moves_made) / (self.height * self.width) > 0.5:
+        guess = self.make_educated_guess()
+        if guess:
+            return guess
         logger.info('AI making random move. Cross your fingers ...')
         # create the set of all possible moves:
         all_possibilities = set()
@@ -380,8 +380,14 @@ class MinesweeperAI():
         guess.
 
         """
-        explosion_probability = 1e6
+        # consider a random move as the ceiling
+        # consider MINES to be the square root of the board for now
+        MINES = int((self.height * self.width) ** 0.5) 
+        complete_board = (self.height * self.width)
+        explosion_probability = MINES / (complete_board - len(self.moves_made))
         educated_guess = set()
+
+        logger.info(f'Random probability: {explosion_probability}')
 
         for sentence in self.knowledge:
             # i want to get the minimum value of explosion_probability
@@ -391,16 +397,18 @@ class MinesweeperAI():
                     # number of mines / number of cells
                     explosion_probability = sentence.count / len(sentence.cells)
                     educated_guess = sentence.cells
-        logger.info('AI making educated guess. You may be more confident ...')
-        logger.info(f'Educated Guess domain: {educated_guess}')
-        logger.info(f'Probability of exploding: {explosion_probability}')
+
 
         # create the set of all possible moves:
         possible_moves = educated_guess - self.moves_made - self.mines - self.safes 
         
         # if no move was found, return None
-        if not len(possible_moves) or explosion_probability >= 0.5:
+        if not len(possible_moves):
             return None
+
+        logger.info('AI making educated guess. You may be more confident ...')
+        logger.info(f'Educated Guess domain: {educated_guess}')
+        logger.info(f'Probability of exploding: {explosion_probability}')
 
         chosen = possible_moves.pop()        
         logger.info(f'Chosen move: {chosen}')
