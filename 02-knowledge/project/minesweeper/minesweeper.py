@@ -1,7 +1,11 @@
-import itertools
 import random
+import logging
 
+FORMAT = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+logging.basicConfig(
+    filename='history.log', format=FORMAT, level=logging.INFO)
 
+logger = logging.getLogger('minesweeper')
 class Minesweeper():
     """
     Minesweeper game representation
@@ -112,10 +116,7 @@ class Sentence():
             # it means all neighboring cells are mines
             # for example, if nearby_mines((0,0)) = 3, it must mean that
             # {(1,0), (1,1), (0,1)} = 3, or in plain english, they are all mines
-            print("Known mines")
-            print("---------")
-            print(self.cells)
-            print(self.count)
+
             return self.cells
         
         return set()
@@ -128,10 +129,7 @@ class Sentence():
             # it means all neighboring cells are safe
             # for example, if nearby_mines((0,0)) = 0, it must mean that 
             # {(1,0), (1,1), (0,1)} = 0, or in plain english, they are all safe
-            print("Known safes")
-            print("---------")
-            print(self.cells)
-            print(self.count)
+
             return self.cells
         
         
@@ -152,10 +150,7 @@ class Sentence():
         # {(1,0), (1,1)} = 1
         self.cells.discard(cell)
         self.count -= 1
-        print("Mark mine")
-        print("---------")
-        print(self.cells)
-        print(self.count)
+
 
     def mark_safe(self, cell):
         """
@@ -172,10 +167,7 @@ class Sentence():
         # then I remove (0,1) from the set and the resulting sentence would be
         # {(1,0), (1,1)} = 2
         self.cells.discard(cell)
-        print("Mark safe")
-        print("---------")
-        print(self.cells)
-        print(self.count)
+
 
 class MinesweeperAI():
     """
@@ -234,10 +226,81 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        # step 1: mark as a move made
         self.moves_made.add(cell)
-        self.safes.add(cell)
-        pass
-        #raise NotImplementedError
+        
+        # step 2: mark the cell as safe
+        self.mark_safe(cell)
+        
+        # step 3: add the sentence regarding the new information coming from the click
+        nearbies = set()
+        # run through nearby elements
+        # Loop over all cells within one row and column
+        for i in range(cell[0] - 1, cell[0] + 2):
+            for j in range(cell[1] - 1, cell[1] + 2):
+                # Ignore the cell itself
+                if (i, j) == cell:
+                    continue
+                # if cell within bounds
+                if 0 <= i < self.height and 0 <= j < self.width:               
+                    nearbies.add((i,j))
+        
+        # nearbies are the knowledge, remove self.safes to account the fact that they are not mines
+        sentence = Sentence(nearbies - self.safes, count)
+        
+        # include only if new knowledge.
+        if sentence not in self.knowledge:
+            self.knowledge.append(sentence)
+            logger.info(f'Knowledge included: {sentence}')
+        
+
+        # step 5
+        new_cells = set()
+        knowledge = []
+        for sentence_a in self.knowledge:
+            for sentence_b in self.knowledge:
+                if sentence_a != sentence_b:
+                    
+                    if sentence_a.cells.issubset(sentence_b.cells):
+                        new_cells = sentence_b.cells - sentence_a.cells
+                        new_count = sentence_b.count - sentence_a.count
+                    elif sentence_b.cells.issubset(sentence_a.cells):
+                        new_cells = sentence_a.cells - sentence_b.cells 
+                        new_count = sentence_a.count - sentence_b.count
+                    if new_cells:
+                        new_sentence = Sentence(new_cells, new_count)
+                        if new_sentence not in self.knowledge and new_sentence not in knowledge:
+                            knowledge.append(new_sentence)
+
+        for k in knowledge:
+            logger.info(f'Inferred knowledge: {k}')
+
+        if len(knowledge):
+            self.knowledge += knowledge
+
+        # clean up knowledge to discard equal values
+        self.knowledge = self.get_distinct_sentences()
+
+        # step 4: mark safes and mines from knowledge
+        for sentence in self.knowledge:
+            known_safes = sentence.known_safes().copy()
+            known_mines = sentence.known_mines().copy()
+            if known_safes:
+                logger.info(f'Marking {known_safes} as safes')
+                for cell in known_safes:
+                    self.mark_safe(cell)
+            if known_mines:
+                logger.info(f'Marking {known_mines} as mines')
+                for cell in known_mines:
+                    self.mark_mine(cell)
+
+    def get_distinct_sentences(self):
+        unique_sentences = []
+        for s in self.knowledge:
+            if s not in unique_sentences:
+                unique_sentences.append(s)
+
+        return unique_sentences
 
     def make_safe_move(self):
         """
@@ -249,7 +312,10 @@ class MinesweeperAI():
         and self.moves_made, but should not modify any of those values.
         """
         # remove from set of safe moves, the moves already made.
-        possible_safe_moves = self.safes - self.moves_made
+        
+        possible_safe_moves = self.safes - self.moves_made - self.mines
+        logger.info(f'Possible safe moves: {possible_safe_moves}')
+        logger.info(f'Mines known: {self.mines}')
 
         # if empty, we will have to make a random move
         if not len(possible_safe_moves):
@@ -257,7 +323,7 @@ class MinesweeperAI():
 
         chosen = possible_safe_moves.pop()
 
-        print(chosen)
+        logger.info(f'Chosen move: {chosen}')
 
         return chosen
 
@@ -268,6 +334,18 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
+
+        # Try to make an educated guess instead of a random move.
+        # Make educated guesses after half the board is occupied
+        # The educated guess can only envision its 'field of view', 
+        # which considers only mine information, not far away.
+        # So it seems better to, at the beginning, generate a really 
+        # random choice.
+        if len(self.moves_made) / (self.height * self.width) > 0.5:
+            guess = self.make_educated_guess()
+            if guess:
+                return guess
+        logger.info('AI making random move. Cross your fingers ...')
         # create the set of all possible moves:
         all_possibilities = set()
         for i in range(self.height):
@@ -275,7 +353,6 @@ class MinesweeperAI():
                 all_possibilities.add((i, j))
         
         possible_moves = all_possibilities - self.moves_made - self.mines - self.safes 
-        
         # if no move was found, return None
         if not len(possible_moves):
             return None
@@ -283,5 +360,48 @@ class MinesweeperAI():
         chosen = possible_moves.pop()
         
         
-        print(chosen)
+        logger.info(f'Chosen move: {chosen}')
+        return chosen
+
+    def make_educated_guess(self):
+        """
+        Returns a move to make on the Minesweeper board.
+        
+        This is similar to the random-move, however, it tries to use the probability
+        of having a mine within a set of cells into account.
+
+        The idea is: if you have two knowledges:
+            - {(1,1), (2,2), (3,3)} = 1
+            - {(4,4), (5,5)} = 1
+
+        The first knowledge also tells you that the probability of having a mine is 1 out of 3 (33%)
+        whereas the second knowledge is telling you that, if you pick one at random from it, you end 
+        up with 1 out of 2 (50%) probability of choosing a mine. Hence, the first option is a better 
+        guess.
+
+        """
+        explosion_probability = 1e6
+        educated_guess = set()
+
+        for sentence in self.knowledge:
+            # i want to get the minimum value of explosion_probability
+            # exclude division by zero
+            if len(sentence.cells):
+                if sentence.count / len(sentence.cells) < explosion_probability:
+                    # number of mines / number of cells
+                    explosion_probability = sentence.count / len(sentence.cells)
+                    educated_guess = sentence.cells
+        logger.info('AI making educated guess. You may be more confident ...')
+        logger.info(f'Educated Guess domain: {educated_guess}')
+        logger.info(f'Probability of exploding: {explosion_probability}')
+
+        # create the set of all possible moves:
+        possible_moves = educated_guess - self.moves_made - self.mines - self.safes 
+        
+        # if no move was found, return None
+        if not len(possible_moves) or explosion_probability >= 0.5:
+            return None
+
+        chosen = possible_moves.pop()        
+        logger.info(f'Chosen move: {chosen}')
         return chosen

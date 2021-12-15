@@ -3,7 +3,7 @@
 
 ### Custom ###
 *.mp4
-
+*.log
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks

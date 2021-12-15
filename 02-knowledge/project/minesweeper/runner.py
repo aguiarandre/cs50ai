@@ -1,7 +1,9 @@
 import pygame
 import sys
 import time
+import logging
 
+logger = logging.getLogger('runner')
 from minesweeper import Minesweeper, MinesweeperAI
 
 HEIGHT = 8
@@ -12,6 +14,9 @@ MINES = 8
 BLACK = (0, 0, 0)
 GRAY = (180, 180, 180)
 WHITE = (255, 255, 255)
+RED = (219, 37, 24)
+GREEN = (37, 219, 24)
+PURPLE = (115, 27, 179)
 
 # Create game
 pygame.init()
@@ -48,6 +53,7 @@ lost = False
 
 # Show instructions initially
 instructions = True
+m = False
 
 while True:
 
@@ -55,6 +61,9 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_m:
+                m = True
 
     screen.fill(BLACK)
 
@@ -98,6 +107,14 @@ while True:
         pygame.display.flip()
         continue
 
+    field_vision = set()
+    for s in ai.knowledge:
+        for cell in s.cells:
+            field_vision.add(cell)
+    
+    safe_move = ai.safes
+    mine_move = ai.mines
+
     # Draw board
     cells = []
     for i in range(HEIGHT):
@@ -112,6 +129,12 @@ while True:
             )
             pygame.draw.rect(screen, GRAY, rect)
             pygame.draw.rect(screen, WHITE, rect, 3)
+            if (i, j) in field_vision:
+                pygame.draw.rect(screen, PURPLE, rect)
+            if (i, j) in safe_move:
+                pygame.draw.rect(screen, GREEN, rect)
+            if (i, j) in mine_move:
+                pygame.draw.rect(screen, RED, rect)
 
             # Add a mine, flag, or number if needed
             if game.is_mine((i, j)) and lost:
@@ -174,12 +197,13 @@ while True:
                     else:
                         flags.add((i, j))
                     time.sleep(0.2)
-
-    elif left == 1:
+    
+    elif left == 1 or m:
         mouse = pygame.mouse.get_pos()
 
         # If AI button clicked, make an AI move
-        if aiButton.collidepoint(mouse) and not lost:
+        if (aiButton.collidepoint(mouse) or m) and not lost:
+            m = False
             move = ai.make_safe_move()
             if move is None:
                 move = ai.make_random_move()
@@ -214,6 +238,7 @@ while True:
     if move:
         if game.is_mine(move):
             lost = True
+            logger.info('---- GAME OVER ----')
         else:
             nearby = game.nearby_mines(move)
             revealed.add(move)
