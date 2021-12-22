@@ -4,6 +4,8 @@
 ### Custom ###
 *.mp4
 *.log
+.DS_Store
+
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
