@@ -153,11 +153,6 @@ class CrosswordCreator():
             self.domains[x] = domain
 
         return True
-        
-        
-        # if revision was done, return True
-
-        return
 
     def ac3(self, arcs=None):
         """
