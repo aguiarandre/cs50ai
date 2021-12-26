@@ -1,6 +1,41 @@
 from typing import List 
 from collections import defaultdict
 
+
+class Variable:
+    def __init__(self, i, j, value=None):
+        self.i = i
+        self.j = j
+        self.cells = [(i, j)]
+        self.value = value
+        self.groups = None
+
+    def __str__(self):
+        return f"({self.i}, {self.j}): {self.value}"
+
+    def __repr__(self):
+       return f"Variable({self.i}, {self.j}): {self.value}"
+
+    def __hash__(self):
+        return hash((self.i, self.j, str(self.cells)))
+    
+    def __eq__(self, other):
+        return (
+            (self.i == other.i) and
+            (self.j == other.j) and
+            (self.cells == other.cells) and
+            (self.value == other.value)
+        )
+    
+    def __gt__(self, other):
+        result = (
+            (self.i >= other.i) 
+        )
+        if self.i == other.i:
+            result = (
+                (self.j >= other.j)
+            )
+        return result
         
 class Group:
     def __init__(self, i: int, j: int, values: List):
@@ -34,7 +69,6 @@ class Row(Group):
 
     def __repr__(self):
         return f"Row({self.i}, {self.j}, {[val for val in self.values]}, {[val for val in self.cells]})"
-
 
 class Column(Group):
     def __init__(self, i: int, j: int, values: List):
@@ -79,51 +113,6 @@ class Box(Group):
     def __repr__(self):
         return f"Box({self.i}, {self.j}, {[val for val in self.values]}, {[val for val in self.cells]})"
 
-class Variable:
-    def __init__(self, i, j, value=None):
-        self.i = i
-        self.j = j
-        self.cells = [(i, j)]
-        self.value = value
-        self.groups = self._groups()
-
-    def __str__(self):
-        return f"({self.i}, {self.j}): {self.value}"
-
-    def __repr__(self):
-        return f"Cell({self.i}, {self.j}): {self.value}"
-
-    def __hash__(self):
-        return hash((self.i, self.j, str(self.cells)))
-    
-    def __eq__(self, other):
-        return (
-            (self.i == other.i) and
-            (self.j == other.j) and
-            (self.cells == other.cells) and
-            (self.value == other.value)
-        )
-    
-    def __gt__(self, other):
-        # order by i
-        result = (
-            (self.i >= other.i) 
-        )
-        if self.i == other.i:
-            result = (
-                (self.j >= other.j)
-            )
-        return result
-
-    def _groups(self):
-        '''
-        Return a set containing the groups that this cell belongs to.
-        '''
-        i, j = self.i, self.j
-
-
-
-
 class Sudoku:
 
     def __init__(self, structure_file):
@@ -143,12 +132,7 @@ class Sudoku:
         # Create data structures to store information from the puzzle
         # Row data:
         for i, row in enumerate(contents):
-            values = []
-            for symbol in row:
-                if symbol == '#':
-                    values.append(None)
-                else:
-                    values.append(int(symbol))
+            values = [(int(symbol) if symbol != '#' else None) for symbol in row]
             self.groups.append(Row(i, 0, values))
 
         # Column data:
@@ -174,28 +158,18 @@ class Sudoku:
 
             self.groups.append(Box(box_row * 3, box_column * 3, values))
 
-        # Compute overlaps for each group
-        # For any pair of variables v1, v2, their overlap is either:
-        #    empty list, if the two variables do not overlap; or
-        #    [(i, j)], where v1's ith cell overlaps v2's jth cell
-        self.compute_group_overlaps()
-
         # compute variables:
         self.variables = set()
         for i, row in enumerate(contents):
             for j, value in enumerate(row):
                 if value == '#':
-                    self.variables.add(
-                        Variable(i, j, None)
-                    )
+                    # givens are not needed
+                    self.variables.add(Variable(i, j))
 
-        self.compute_variable_overlaps()
-        
         # store the group variables in its .groups attribute
+        self.compute_overlaps()
         
-
-
-    def compute_variable_overlaps(self, ):
+    def compute_overlaps(self, ):
         self.overlaps = dict()
         for v in self.variables:
             cells1 = v.cells
@@ -254,7 +228,6 @@ class Sudoku:
                              cells2.index(intersection))
                         )
 
-
     def group_neighbors(self, group):
         """Given a group, return set of overlapping groups."""
         return set(
@@ -263,29 +236,27 @@ class Sudoku:
         )
     
     def neighbors(self, var):
-        """Given a variable, return set of overlapping groups."""
+        """Given a variable, return set of its overlapping groups."""
         result = set()
         for g in self.groups:
             if self.overlaps.get((var, g), None):
                 result.add(g)
-
         return result
     
     def neighboring_variables(self, var):
         """
-        Given a variable, get the set of all cells that it is related to.
+        Given a variable, get the set of all cells that it is related to. 
+        Meaning all cells from neighboring groups.
         """
         groups_related = var.groups
         cells_related = set()
         for g in groups_related:
             for i, j in g.cells:
                 cells_related.add(Variable(i, j))
-                if i == 2 and j == 3:
-                    print(Variable(i, j))
 
         return cells_related
 
-    def save(self, filename, assigment=None, id=None):
+    def save(self, filename, assigment=None):
         """
         Save sudoku to an image file.
         """
@@ -350,6 +321,5 @@ class Sudoku:
                         rect[0][1] + ((interior_size - h) / 2) - 10),
                     solution, fill="red", font=font
                 )
-
 
         img.save(filename)
