@@ -1,11 +1,11 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
+# Edit at https://www.toptal.com/developera/gitignore?templates=python,jupyternotebooks
 
 ### Custom ###
 *.mp4
 *.log
 .DS_Store
-
+06-neural-networks/project/traffic/data/gtsrb/
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
