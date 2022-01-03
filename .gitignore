@@ -5,6 +5,7 @@
 *.mp4
 *.log
 .DS_Store
+*/.DS_Store
 06-neural-networks/project/traffic/data/gtsrb/
 
 ### JupyterNotebooks ###

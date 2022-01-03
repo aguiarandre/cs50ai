@@ -3,7 +3,7 @@ import sys
 
 from util import Node, StackFrontier, QueueFrontier
 
-# from tqdm.auto import tqdm
+from tqdm.auto import tqdm
 
 # Maps names to a set of corresponding person_ids
 names = {}
@@ -54,9 +54,6 @@ def load_data(directory):
                 pass
 
 
-
-
-
 def main():
     if len(sys.argv) > 2:
         sys.exit("Usage: python degrees.py [directory]")
@@ -90,9 +87,9 @@ def main():
             movie = movies[path[i + 1][0]]["title"]
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
-# def while_generator():
-#     while True:
-#         yield
+def while_generator():
+    while True:
+        yield
 
 def shortest_path(source, target):
     """
@@ -111,8 +108,8 @@ def shortest_path(source, target):
     frontier.add(node)
     iteration_number = 0
 
-    while True:
-    # for _ in tqdm(while_generator()):
+    # while True:
+    for _ in tqdm(while_generator(), desc='Searching ...'):
 
         iteration_number+=1
         # check if frontier is empty

@@ -237,9 +237,9 @@ class SudokuSolver:
             assignment[var] = value
             self.update(var, assignment)
 
-            # now = datetime.now().strftime('%H%M%S%f')
-            # filename = f'media/1/output_{now}.png'
-            # self.sudoku.save(filename, assignment)
+            now = datetime.now().strftime('%H%M%S%f')
+            filename = f'media/1/output_{now}.png'
+            self.sudoku.save(filename, assignment)
             
             # TODO: include inferences after selecting a variable 
             if self.consistent(assignment):

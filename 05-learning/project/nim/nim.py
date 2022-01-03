@@ -125,6 +125,7 @@ class NimAI():
         
         key = (tuple(state), action)
         self.q[key] = new_q
+        
         return
 
     def best_future_reward(self, state):
@@ -215,25 +216,34 @@ def train(n):
 
             # Keep track of current state and action
             state = game.piles.copy()
-            action = player.choose_action(game.piles)
+            action = player.choose_action(game.piles, epsilon=True)
 
             # Keep track of last state and action
             last[game.player]["state"] = state
             last[game.player]["action"] = action
 
-            # Make move
+            # Make move (game.move switches player)
             game.move(action)
             new_state = game.piles.copy()
 
             # When game is over, update Q values with rewards
             if game.winner is not None:
+                # if that move led to a game.winner
+                # then it means that it was a LOSING move. 
+                # so we need to give a reward of -1
                 player.update(state, action, new_state, -1)
+
+                # if that move was a LOSING move, the move before that 
+                # has led to a WINNING, which means we need to give 
+                # a reward of +1
                 player.update(
                     last[game.player]["state"],
                     last[game.player]["action"],
                     new_state,
                     1
                 )
+                # it's interesting because the AI won and lost at the same time,
+                # both leading to a new knowledge/reward.
                 break
 
             # If game is continuing, no rewards yet
@@ -244,6 +254,11 @@ def train(n):
                     new_state,
                     0
                 )
+        # if (i+1) == n:
+        #     print('---------')
+        #     print(n)
+        #     for k, v in sorted(player.q.items(), key=lambda x : -x[1]):
+        #         print(k, v)
 
     print("Done training")
 
