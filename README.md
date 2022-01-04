@@ -11,7 +11,7 @@ Search problems can be modeled as an `agent` within an `environment`. This agent
 
 `TODO`: cite frontier and node as main data structures that help understand these solutions.
 
-[Degrees](01-search/project/degrees/)         |  [Tic-Tac-Toe](01-search/project/tic-tac-toe/)
+[Degrees](01-search/project/degrees/srs)         |  [Tic-Tac-Toe](01-search/project/tic-tac-toe/src)
 :-------------------------:|:-------------------------:
 <img src="01-search/project/degrees/src/media/frontier/frontier.gif"  width="300"/>  |  <img src="01-search/project/tic-tac-toe/src/media/computer-won.png" width="300"/>
 Nodes and Frontiers | MinMax Strategy 
@@ -76,14 +76,14 @@ Simple Classification Model | Reinforcement Learning
 ## Neural Networks Concepts
 `TODO`: Talk about neural networks architectures. Image convolution and max-pooling strategies. Dropout for regularization, how it may avoid over-reliance on specific weights. 
 
-[Traffic](06-neural-network/project/traffic/)         |  
+[Traffic](06-neural-networks/project/traffic/)         | |
 :-------------------------:|:-------------------------:
-<img src="06-neural-network/project/traffic/TODO.gif"  alt="" width="300"/> |
-Image Classification | 
-Hidden Layers | 
-Convolution |
-Pooling Layers | 
-Dropout | 
+<img src="06-neural-networks/project/traffic/TODO.gif"  alt="" width="300"/> | |
+Image Classification | |
+Hidden Layers | |
+Convolution | |
+Pooling Layers | |
+Dropout | |
 
 
 ## Natural Language Ideas

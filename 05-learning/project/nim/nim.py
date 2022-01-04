@@ -69,6 +69,13 @@ class Nim():
         if all(pile == 0 for pile in self.piles):
             self.winner = self.player
 
+    @classmethod
+    def state(cls, piles):
+        """
+        Nim.state(piles) takes a `piles` list as input
+        """
+        pass
+
 
 class NimAI():
 
